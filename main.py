@@ -11,20 +11,22 @@ except ImportError:
 
 class Player:
     def __init__(self, name):
-        self.name = name
+        self.name = name.title()
         self.score = 0
+        self.incorrect = 0
 
 
     def print_players_stats(self):
-        print(f'{self.name} has a total score of {self.score}!')
+        print(f'\n{self.name} had a total score of {self.score}!')
+        print(f'They awnsered {(self.score / (self.score + self.incorrect)) * 100:.2f}% of their questions correct')
 
     
     def play_turn(self, question):
         print(f"\n{self.name}s turn")
-        print(question)
         number_of_awnsers = len(question["incorrect_answers"]) + 1
         correct_awnser = random.randint(0, number_of_awnsers - 1)
         awnsers_list = question["incorrect_answers"]
+        random.shuffle(awnsers_list)
         awnsers_list.insert(correct_awnser, question["correct_answer"])
         print(f'Question: {question["question"]}')
         for index, awnser in enumerate(awnsers_list):
@@ -35,11 +37,13 @@ class Player:
                 break
             else:
                 print(f'Please Chose one of the options(1-{number_of_awnsers})')
-        if choice == correct_awnser:
+        if choice - 1 == correct_awnser:
             print('Correct!!!!')
+            self.score += 1
         else:
             print('Incorect')
-
+            self.incorrect += 1
+            print(f'The correct awnser was: {correct_awnser + 1}. {question["correct_answer"]}')
 
 
 class Questions:
@@ -53,7 +57,10 @@ class Questions:
 
     def call_api(self):
         url = self.opentrivia_url + self.ammount_url + self.category_url
-        response = requests.get(url)
+        try:
+            response = requests.get(url)
+        except:
+            return(False)
         if response.status_code == 200:
             json_data = response.json()
             return(json_data)
@@ -65,10 +72,8 @@ class Questions:
                     time.sleep(30)
                     self.call_api(url)
                 else:
-                    print('API call failled, try again')
                     return(False)
             except:
-                print('API call failled, try again')
                 return(False)
         
 
@@ -87,6 +92,7 @@ def get_int():
 
 #variable defined 
 all_players = []
+all_scores = []
 count = 1
 catagorys_list = [
     ["Books", 10],
@@ -131,19 +137,43 @@ while True:
             print("Please choose one of the options(1-10).")
     catagory_id = catagorys_list[catagory - 1][1]
 
-    print(f'Do you want each person to awnser 5, 3, or 1 question(s) on this topic?')
+    print(f'How many questions do you want the player(s) on this topic?(Max 5)')
     while True:
         number_questions = get_int()
-        if number_questions in [1, 3, 5]:
+        if number_questions > 0 and number_questions <= 5:
             break
         else:
-            print("Please choose one of the options(3, 3, 1).")
+            print("Please choose a number 1 - 5.")
 
     rounds_questions = Questions(num_players, catagory_id)
 
     for i in range(number_questions):
         returned_questions = rounds_questions.call_api()
+        if returned_questions == False:
+            count -= 1
+            print("API call Failed!!")
+            print("Mabey you aren't connect to the internet??")
+            print("Please try again.")
+            break
         for index, player in enumerate(all_players):
             player.play_turn(returned_questions["results"][index])
+
+    print('Press 0 to EXIT or ENTER to play another round(any other key also works to continue)')
+    exit = input('> ')
+    if exit == "0":
+        for player in all_players:
+            player.print_players_stats()
+            all_scores.append(player.score)
+        winners = [index for index, value in enumerate(all_scores) if value == max(all_scores)]
+        if len(winners) > 1:
+            print('\nTie!!!')
+            print('\nOur winners are:')
+            for player in winners:
+                print(all_players[player].name)
+        else:
+            print(f'\n{all_players[winners[0]].name} Wins!!!!!!')
+                
+        print('\nThank you for playing')
+        break
 
     count += 1
