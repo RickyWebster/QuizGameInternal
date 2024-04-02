@@ -59,4 +59,48 @@ def get_int(msg):
                 return(output)
         except ValueError:
             print("Please enter a integer!")
+
+
+#variable defined 
+all_players = []
+count = 1
+catagorys_list = [
+    ["Books", 10],
+    ["Film", 11],
+    ["Science & Nature", 17],
+    ["Computers", 18],
+    ["Mathmatics", 19],
+    ["Sports", 21],
+    ["Geography", 22],
+    ["History", 23],
+    ["Animals", 27],
+    ["Vehicles", 28]
+]
+
+#MAIN ROUTIENE
+#Setting up the player objects
+print("\nWelcome to Ricky's Level 3 Python Internal Using OOP and APIs Trivia Game!!!")
+while True:
+    print("how many players will be playing?(max 5)")
+    num_players = get_int("> ")
+    if num_players > 5 or num_players < 1:
+        print("You can have a maximum number of 5 players and you have to have at least 1")
+    else:
+        break
+for i in range(num_players):
+    print(f"what is player {i + 1}'s name?")
+    name = str(input('>'))
+    all_players.append(Player(name))
+
+while True:
+    print(f'Round {count}!')
+    print(f'What catagory do you choose for round {count}:')
+
+
+
+
+
+
+    count += 1
+
     
