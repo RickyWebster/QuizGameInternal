@@ -1,4 +1,4 @@
-import os, time, random
+import os, time, random, html
 try:
     import requests
 except ImportError:
@@ -28,7 +28,8 @@ class Player:
         awnsers_list = question["incorrect_answers"]
         random.shuffle(awnsers_list)
         awnsers_list.insert(correct_awnser, question["correct_answer"])
-        print(f'Question: {question["question"]}')
+        decoded_question = html.unescape(question["question"])
+        print(f'Question: {decoded_question}')
         for index, awnser in enumerate(awnsers_list):
             print(f'{index + 1}. {awnser}')
         while True:
@@ -51,12 +52,11 @@ class Questions:
         self.opentrivia_url = "https://opentdb.com/api.php"
         self.ammount_url = "?amount=" + str(num_players)
         self.category_url = "&category=" + str(category)
-#        self.dificulty_url = "&dificulty="
-#        self.dificulty = ["easy", "medium", "hard"]
+        self.difficulty_url = "&difficulty="
 
 
-    def call_api(self):
-        url = self.opentrivia_url + self.ammount_url + self.category_url
+    def call_api(self, difficulty):
+        url = self.opentrivia_url + self.ammount_url + self.category_url + self.difficulty_url + difficulty
         try:
             response = requests.get(url)
         except:
@@ -68,9 +68,9 @@ class Questions:
             try:
                 json_data = response.json()
                 if json_data['response_code'] == 5:
-                    print('Api called too many times. Wating 30 seconds before trying again')
-                    time.sleep(30)
-                    self.call_api(url)
+                    print('Api called too many times. Wating 20 seconds before trying again')
+                    time.sleep(20)
+                    return(self.call_api(url))
                 else:
                     return(False)
             except:
@@ -89,91 +89,91 @@ def get_int():
         except ValueError:
             print("Please enter a integer!")
 
+if __name__ == "__main__":
+    #variable defined 
+    all_players = []
+    all_scores = []
+    count = 1
+    catagorys_list = [
+        ["Books", 10],
+        ["Film", 11],
+        ["Science & Nature", 17],
+        ["Computers", 18],
+        ["Mathmatics", 19],
+        ["Sports", 21],
+        ["Geography", 22],
+        ["History", 23],
+        ["Animals", 27],
+        ["Vehicles", 28]
+    ]
+    difficulty_options = ["easy", "medium", "hard"]
 
-#variable defined 
-all_players = []
-all_scores = []
-count = 1
-catagorys_list = [
-    ["Books", 10],
-    ["Film", 11],
-    ["Science & Nature", 17],
-    ["Computers", 18],
-    ["Mathmatics", 19],
-    ["Sports", 21],
-    ["Geography", 22],
-    ["History", 23],
-    ["Animals", 27],
-    ["Vehicles", 28]
-]
-
-#MAIN ROUTIENE
-#Setting up the player objects
-print("\nWelcome to Ricky's Level 3 Python Internal Using OOP and APIs Trivia Game!!!")
-while True:
-    print("how many players will be playing?(max 5)")
-    num_players = get_int()
-    if num_players > 5 or num_players < 1:
-        print("You can have a maximum number of 5 players and you have to have at least 1")
-    else:
-        break
-for i in range(num_players):
-    print(f"what is player {i + 1}'s name?")
-    name = str(input('> '))
-    all_players.append(Player(name))
-
-while True:
-    print(f'\nRound {count}!')
-    print(f'What catagory do you choose for round {count}:')
-    for index, catagories in enumerate(catagorys_list[::2]):
-        coloum1 = f"{index * 2 + 1}. {catagories[0]}"
-        coloum2 = F"{index * 2 + 2}. {catagorys_list[index * 2 + 1][0]}"
-        print("{:<{}} {}".format(coloum1, 22, coloum2))
+    #Setting up the player objects
+    print("\nWelcome to Ricky's Level 3 Python Internal Using OOP and APIs Trivia Game!!!")
     while True:
-        catagory = get_int()
-        if catagory < 11 and catagory > 0:
-            break
+        print("how many players will be playing?(max 5)")
+        num_players = get_int()
+        if num_players > 5 or num_players < 1:
+            print("You can have a maximum number of 5 players and you have to have at least 1")
         else:
-            print("Please choose one of the options(1-10).")
-    catagory_id = catagorys_list[catagory - 1][1]
+            break
+    for i in range(num_players):
+        print(f"what is player {i + 1}'s name?")
+        name = str(input('> '))
+        all_players.append(Player(name))
 
-    print(f'How many questions do you want the player(s) on this topic?(Max 5)')
     while True:
-        number_questions = get_int()
-        if number_questions > 0 and number_questions <= 5:
+        print(f'\nRound {count}!')
+        print(f'What catagory do you choose for round {count}:')
+        for index, catagories in enumerate(catagorys_list[::2]):
+            coloum1 = f"{index * 2 + 1}. {catagories[0]}"
+            coloum2 = F"{index * 2 + 2}. {catagorys_list[index * 2 + 1][0]}"
+            print("{:<{}} {}".format(coloum1, 22, coloum2))
+        while True:
+            catagory = get_int()
+            if catagory < 11 and catagory > 0:
+                break
+            else:
+                print("Please choose one of the options(1-10).")
+        catagory_id = catagorys_list[catagory - 1][1]
+
+        print(f'How many questions do you want the player(s) on this topic?(Max 5)')
+        while True:
+            number_questions = get_int()
+            if number_questions > 0 and number_questions <= 5:
+                break
+            else:
+                print("Please choose a number 1 - 5.")
+
+        rounds_questions = Questions(num_players, catagory_id)
+
+        for i in range(number_questions):
+            local_difficulty = difficulty_options[random.randint(0, 2)]
+            returned_questions = rounds_questions.call_api(local_difficulty)
+            if returned_questions == False:
+                count -= 1
+                print("API call Failed!!")
+                print("Mabey you aren't connect to the internet??")
+                print("Please try again.")
+                break
+            for index, player in enumerate(all_players):
+                player.play_turn(returned_questions["results"][index])
+
+        print('Press 0 to EXIT or ENTER to play another round(any other key also works to continue)')
+        exit = input('> ')
+        if exit == "0":
+            for player in all_players:
+                player.print_players_stats()
+                all_scores.append(player.score)
+            winners = [index for index, value in enumerate(all_scores) if value == max(all_scores)]
+            if len(winners) > 1:
+                print('\nTie!!!')
+                print('\nOur winners are:')
+                for player in winners:
+                    print(all_players[player].name)
+            else:
+                print(f'\n{all_players[winners[0]].name} Wins!!!!!!')
+                    
+            print('\nThank you for playing')
             break
-        else:
-            print("Please choose a number 1 - 5.")
-
-    rounds_questions = Questions(num_players, catagory_id)
-
-    for i in range(number_questions):
-        returned_questions = rounds_questions.call_api()
-        if returned_questions == False:
-            count -= 1
-            print("API call Failed!!")
-            print("Mabey you aren't connect to the internet??")
-            print("Please try again.")
-            break
-        for index, player in enumerate(all_players):
-            player.play_turn(returned_questions["results"][index])
-
-    print('Press 0 to EXIT or ENTER to play another round(any other key also works to continue)')
-    exit = input('> ')
-    if exit == "0":
-        for player in all_players:
-            player.print_players_stats()
-            all_scores.append(player.score)
-        winners = [index for index, value in enumerate(all_scores) if value == max(all_scores)]
-        if len(winners) > 1:
-            print('\nTie!!!')
-            print('\nOur winners are:')
-            for player in winners:
-                print(all_players[player].name)
-        else:
-            print(f'\n{all_players[winners[0]].name} Wins!!!!!!')
-                
-        print('\nThank you for playing')
-        break
-
-    count += 1
+        count += 1
